@@ -47,7 +47,8 @@ part_detect () {
   # TODO: Make the escaping less yucky...
   KERNEL_PARTITION=`${SSH} "awk -e '\\$4 ~ /\"Kernel\"/ {print \"/dev/\" substr(\\$1, 1, length(\\$1)-1)}' /proc/mtd"`
   RFS_PARTITION=`${SSH} "awk -e '\\$4 ~ /\"RFS\"/ {print \"/dev/\" substr(\\$1, 1, length(\\$1)-1)}' /proc/mtd"`
-  echo "Kernel partition=$KERNEL_PARTITION RFS Partition=$RFS_PARTITION"
+  BULK_PARTITION=`${SSH} "awk -e '\\$4 ~ /\"Bulk\"/ {print \"/dev/\" substr(\\$1, 1, length(\\$1)-1)}' /proc/mtd"`
+  echo "Kernel partition=$KERNEL_PARTITION RFS Partition=$RFS_PARTITION Bulk Partition=$BULK_PARTITION"
 }
 
 surgeon_lf1k_2k () {
@@ -64,6 +65,11 @@ surgeon_lf1k_2k () {
   # For the first ssh command, skip hostkey checking to avoid prompting the user.
   ${SSH} -o "StrictHostKeyChecking no" 'test'
   part_detect
+  ${SSH} "ubiattach /dev/ubi_ctrl -p $RFS_PARTITION"
+  ${SSH} "mount -t ubifs /dev/ubi0_0 -o rw /roms"
+  ${SSH} "ubiattach /dev/ubi_ctrl -p $BULK_PARTITION"
+  ${SSH} "mount -t ubifs /dev/ubi1_0 -o rw /roms/LF/Bulk"
+  ${SSH} "echo rootfs mounted at /roms, bulk mounted at /roms/LF/Bulk"
   ${SSH}
 }
 
@@ -74,6 +80,11 @@ surgeon_lf3k () {
   ${SSH} -o "StrictHostKeyChecking no" 'test'
   sleep 3
   part_detect
+  ${SSH} "ubiattach /dev/ubi_ctrl -p $RFS_PARTITION"
+  ${SSH} "mount -t ubifs /dev/ubi0_0 -o rw /roms"
+  ${SSH} "ubiattach /dev/ubi_ctrl -p $BULK_PARTITION"
+  ${SSH} "mount -t ubifs /dev/ubi1_0 -o rw /roms/LF/Bulk"
+  ${SSH} "echo rootfs mounted at /roms, bulk mounted at /roms/LF/Bulk"
   ${SSH} 
 }
 
